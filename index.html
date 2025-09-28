@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>糖潮奶茶店产品导航</title>
+    <script src="hti.waaac.com/tps://cdn.tailwindcss.com"></script>
+    <link href="hti.waaac.com/tps://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        // Tailwind 配置
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#8B5CF6',
+                        secondary: '#EC4899',
+                        accent: '#F59E0B',
+                        dark: '#1F2937',
+                        light: '#F9FAFB'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .bg-blur {
+                backdrop-filter: blur(8px);
+            }
+        }
+    </style>
+</head>
+<body class="bg-light font-sans text-dark min-h-screen flex flex-col">
+    <!-- 背景图 -->
+    <div class="fixed inset-0 -z-10 bg-cover bg-center opacity-10" style="background-image: url('hti.waaac.com/tps://picsum.photos/id/431/1920/1080');"></div>
+    
+    <!-- 头部 -->
+    <header class="sticky top-0 z-50 bg-white/80 bg-blur shadow-sm transition-all duration-300">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl md:text-3xl font-bold text-primary flex items-center">
+                <i class="fa fa-coffee mr-2"></i>
+                <span>糖潮奶茶店产品导航</span>
+            </h1>
+            <button id="menu-toggle" class="md:hidden text-dark focus:outline-none">
+                <i class="fa fa-bars text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- 分类导航 - 可滑动 -->
+        <div class="overflow-x-auto scrollbar-hide border-t border-gray-100">
+            <div class="flex space-x-2 px-4 py-3 min-w-max">
+                <button class="category-btn bg-primary text-white px-4 py-2 rounded-full text-sm font-medium transition-all hover:shadow-md active">
+                    <i class="fa fa-th-large mr-1"></i>
+                    全部产品 <span class="bg-white text-primary rounded-full px-2 text-xs ml-1">109</span>
+                </button>
+                <!-- 分类将通过JS动态生成 -->
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <!-- 产品列表 -->
+        <div id="product-list" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <!-- 产品将通过JS动态生成 -->
+        </div>
+
+        <!-- 加载中指示器 -->
+        <div id="loading" class="flex justify-center items-center py-16">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+    </main>
+
+    <!-- 产品详情模态框 -->
+    <div id="product-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" id="modal-backdrop"></div>
+        <div class="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto m-4 transform transition-all scale-95">
+            <button id="close-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 z-10 bg-white/80 p-2 rounded-full">
+                <i class="fa fa-times text-xl"></i>
+            </button>
+            
+            <div class="p-6">
+                <!-- 产品图片 - 修改为自适应高度并完整显示图片 -->
+                <div class="w-full bg-gray-100 rounded-xl overflow-hidden mb-6">
+                    <img id="modal-image" src="hti.waaac.com/tps://picsum.photos/800/400" alt="产品图片" class="w-full object-contain">
+                </div>
+                
+                <!-- 产品信息 -->
+                <h2 id="modal-title" class="text-2xl md:text-3xl font-bold mb-2"></h2>
+                <p id="modal-category" class="text-gray-500 mb-6"></p>
+                
+                <!-- 制作流程 -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fa fa-list-ol text-primary mr-2"></i>
+                        制作流程
+                    </h3>
+                    <div id="modal-process" class="bg-gray-50 p-4 rounded-lg text-gray-700 whitespace-pre-line"></div>
+                </div>
+                
+                <!-- 视频教程 -->
+                <div class="mb-4">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fa fa-play-circle text-secondary mr-2"></i>
+                        制作视频教程
+                    </h3>
+                    <div class="aspect-video bg-gray-100 rounded-xl overflow-hidden relative">
+                        <iframe id="modal-video" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 产品数据 - 添加了imgUrl和videoUrl
+        const products = [
+            { id: 1, category: "经典奶茶", name: "原味奶茶 500", 
+                process: "雪克杯：25ml 糖 + 70ml 轻脂乳 + 200ml 红茶 + 搅拌均匀 + 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/jdnc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/nc1XDJncn01"
+            },
+            { id: 2, category: "经典奶茶", name: "原味奶茶 700", 
+                process: "雪克杯：35ml 糖 + 90ml 轻脂乳 + 300ml 红茶 + 搅拌均匀 + 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/jdnc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/nc1XDJncn02"
+            },
+            { id: 3, category: "经典奶茶", name: "茉香奶绿 500", 
+                process: "雪克杯：25ml 糖 + 60ml 轻脂乳 + 180ml 绿茶 + 搅拌均匀 + 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/jdnc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/nc1XDJncn03"
+            },
+            { id: 4, category: "经典奶茶", name: "茉香奶绿 700", 
+                process: "雪克杯：35ml 糖 + 80ml 轻脂乳 + 180ml 绿茶 + 搅拌均匀 + 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/jdnc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/nc1XDJncn04"
+            },
+            { id: 5, category: "经典奶茶", name: "鸭屎香奶茶 500", 
+                process: "雪克杯：25ml 糖 + 70ml 轻脂乳 + 200ml 鸭屎香 + 搅拌均匀 + 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/jdnc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/nc1XDJncn05"
+            },
+            { id: 6, category: "经典奶茶", name: "鸭屎香奶茶 700", 
+                process: "雪克杯：35ml 糖 + 90ml 轻脂乳 + 300ml 鸭屎香 + 搅拌均匀 + 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/jdnc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/nc1XDJncn06"
+            },
+            { id: 7, category: "经典奶茶", name: "老红糖珍珠奶茶 500", 
+                process: "入杯：1 勺老红糖珍珠｜雪克杯：25ml 糖 + 60ml 轻脂乳 + 200ml 红茶 + 搅拌均匀 + 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/jdnc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/nc1XDJncn07"
+            },
+            { id: 8, category: "经典奶茶", name: "老红糖珍珠奶茶 700", 
+                process: "入杯：2 勺老红糖珍珠｜雪克杯：30ml 糖 + 80ml 轻脂乳 + 250ml 红茶 + 搅拌均匀 + 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/jdnc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/nc1XDJncn08"
+            },
+            { id: 9, category: "经典奶茶", name: "红豆奶茶 500", 
+                process: "入杯：1 勺红豆｜雪克杯：25ml 糖 + 60ml 轻脂乳 + 200ml 红茶 + 搅拌均匀 + 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/jdnc1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/nc1XDJncn09"
+            },
+            { id: 10, category: "经典奶茶", name: "红豆奶茶 700", 
+                process: "入杯：2 勺红豆｜雪克杯：30ml 糖 + 80ml 轻脂乳 + 250ml 红茶 + 搅拌均匀 + 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/jdnc1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/nc1XDJncn10"
+            },
+            { id: 11, category: "经典奶茶", name: "椰果奶茶 500", 
+                process: "入杯：1 勺椰果｜雪克杯：25ml 糖 + 60ml 轻脂乳 + 200ml 红茶 + 搅拌均匀 + 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/jdnc1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/nc1XDJncn11"
+            },
+            { id: 12, category: "经典奶茶", name: "椰果奶茶 700", 
+                process: "入杯：2 勺椰果｜雪克杯：30ml 糖 + 80ml 轻脂乳 + 250ml 红茶 + 搅拌均匀 + 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/jdnc1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/nc1XDJncn12"
+            },
+            { id: 13, category: "经典奶茶", name: "脆啵啵奶茶 500", 
+                process: "入杯：1 勺脆啵啵｜雪克杯：25ml 糖 + 60ml 极脂乳 + 200ml 红茶 + 搅拌均匀 + 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/jdnc1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/nc1XDJncn13"
+            },
+            { id: 14, category: "经典奶茶", name: "脆啵啵奶茶 700", 
+                process: "入杯：2 勺脆啵啵｜雪克杯：30ml 糖 + 80ml 轻脂乳 + 250ml 红茶 + 搅拌均匀 + 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/jdnc1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/nc1XDJncn14"
+            },
+            { id: 15, category: "经典奶茶", name: "姜撞奶 700", 
+                process: "700 杯：雪克杯 + 100ml 绿茶 + 150ml 纯牛奶 + 50ml 轻脂乳 + 100ml 水 + 冰满",
+                imgUrl: "i.waaac.com/tp/jdnc1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/nc1XDJncn15"
+            },
+            { id: 16, category: "经典奶茶", name: "满怀烧仙草 500", 
+                process: "入杯：2 勺烧仙草 + 半勺珍珠 + 半勺椰果 + 半勺红豆｜雪克杯：15ml 糖 + 50ml 轻脂乳 + 150ml 红茶 + 搅拌均匀 + 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/jdnc1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/nc1XDJncn16"
+            },
+            { id: 17, category: "经典奶茶", name: "满怀烧仙草 700", 
+                process: "入杯：3 勺烧仙草 + 1 勺珍珠 + 1 勺椰果 + 1 勺红豆｜雪克杯：20ml 极 + 65ml 轻脂乳 + 200ml 红茶 + 搅拌均匀 + 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/jdnc1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/nc1XDJncn17"
+            },
+            { id: 18, category: "经典奶茶", name: "满怀烧仙草 1000", 
+                process: "入杯：5 勺烧仙草 + 1.5 勺脆波波 + 1.5 勺椰果 + 1.5 勺红豆｜雪克杯：30ml 糖 + 80ml 轻脂乳 + 300ml 红茶 + 搅拌均匀 + 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/jdnc1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/nc1XDJncn18"
+            },
+            { id: 19, category: "鲜果屿茶", name: "杨汁甘露 700", 
+                process: "入杯：半颗新鲜芒果肉（约 40g）+2 勺脆啵啵 + 1 勺西柚粒 + 80ml 椰乳｜冰沙机：250g 冰 + 30ml 芒果汁 + 10ml 糖 + 150ml 绿茶 + 半颗新鲜芒果肉（约 40g）+ 打至碎状 + 入杯即可",
+                imgUrl: "i.waaac.com/tp/xgyc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/xg1XDJncn19"
+            },
+            { id: 20, category: "鲜果屿茶", name: "多肉葡萄 700", 
+                process: "入杯：6 颗新鲜葡萄果肉（去皮捣碎）+2 勺脆啵啵｜冰沙机：250g 极 + 30ml 葡萄汁 + 150ml 绿茶 + 3 颗葡萄 + 15ml 糖 + 打至碎状 + 入杯即可",
+                imgUrl: "i.waaac.com/tp/xgyc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/xg1XDJncn20"
+            },
+            { id: 21, category: "鲜果屿茶", name: "草莓啵啵茶 700", 
+                process: "入杯：1 勺脆啵啵｜雪克杯：3 颗草莓（捣碎）+1 片香水柠檬 + 冰块（300 刻度线）+ 捣出香气 + 30ml 草莓酱 + 200ml 绿茶 + 100ml 水 + 20ml 糖 + 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/xgyc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/xg1XDJncn21"
+            },
+            { id: 22, category: "鲜果屿茶", name: "芒果啵啵茶 700", 
+                process: "入杯：1 勺脆啵啵｜雪克杯：1 颗芒果（捣碎）+1 片香水柠檬 + 冰块（300 刻度线）+ 捣出香气 + 30ml 芒果酱 + 200ml 绿茶 + 极 100ml 水 + 15ml 糖 + 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/xgyc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/xg1XDJncn22"
+            },
+            { id: 23, category: "鲜果屿茶", name: "超柠果橙茶 极 700", 
+                process: "雪克杯：半颗蜜橙（切厚片）+2 片香水柠檬 + 压出香味 + 20ml 糖 + 30ml 蜜橙酱 + 200ml 绿茶 + 100ml 冰水 + 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/xgyc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/xg1XDJncn23"
+            },
+            { id: 24, category: "鲜果屿茶", name: "百香果冰茶 700", 
+                process: "入杯：2 勺椰果｜雪克杯：2 片香水柠檬 + 1 颗新鲜百香果果肉 + 1 颗金桔（对半切开）+30ml 百香果酱 + 20ml 糖 + 200ml 绿茶 + 100ml 冰水 + 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/xgyc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/xg1XDJncn24"
+            },
+            { id: 25, category: "鲜果屿茶", name: "葡萄啵啵茶 700", 
+                process: "入杯：2 勺脆波波｜雪克杯：2 片香水柠檬 + 5 颗新鲜葡萄 + 冰块（300 刻度线）+ 捣出香味 + 30ml 葡萄酱 + 200ml 绿茶 + 100ml 冰水 + 15ml 糖 + 冰至 8 分满 + 极匀入杯",
+                imgUrl: "i.waaac.com/tp/xgyc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/xg1XDJncn25"
+            },
+            { id: 26, category: "鲜果屿茶", name: "一桶水果茶 1000", 
+                process: "入杯：3 块西瓜 + 1 块芒果 + 2 片橙子 + 1 颗金桔（切开）+ 半勺新鲜百香果 + 1 颗草莓（切开）｜雪克杯：2 片香水柠檬 + 冰块（400 刻度线）+ 捣出香味 + 15ml 芒果酱 + 15ml 百香果酱 + 20ml 橙子酱 + 20ml 糖 + 150ml 绿茶 + 150ml 冰水 + 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/kfxl.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/xg1XDJncn26"
+            },
+            { id: 27, category: "咖啡系列", name: "美式咖啡 500", 
+                process: "入杯：满杯冰块 + 2 份咖啡浓缩 + 冰水至满 + 封杯 + 喝前摇匀（询问是否加糖，1 份糖 10ml）",
+                imgUrl: "i.waaac.com/tp/kfxl.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/kf1XDJncn27"
+            },
+            { id: 28, category: "咖啡系列", name: "拿铁咖啡 500", 
+                process: "极杯：满杯冰块 + 150ml 纯牛奶 + 2 份咖啡浓缩 + 入杯即可（询问是否加糖，1 份糖 10ml）",
+                imgUrl: "i.waaac.com/tp/kfxl.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/kf1XDJncn28"
+            },
+            { id: 29, category: "咖啡系列", name: "生椰咖啡 500", 
+                process: "入杯：满杯冰块 + 150ml 椰乳 + 2 份咖啡浓缩 + 入杯即可（询问是否加糖，1 份糖 10ml）",
+                imgUrl: "i.waaac.com/tp/kfxl.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/kf1XDJncn29"
+            },
+            { id: 30, category: "咖啡系列", name: "柠檬果咖啡 500", 
+                process: "雪克杯：4 片香水柠檬 + 冰块（400 刻度线）+ 捣出香味 + 100ml 冰水 + 20ml 糖 + 冰至满 + 摇匀入杯 + 2 份咖啡浓缩",
+                imgUrl: "i.waaac.com/tp/kfxl.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/kf1XDJncn30"
+            },
+            { id: 31, category: "咖啡系列", name: "鲜橙果咖啡 500", 
+                process: "雪克杯：60g 新鲜橙子（去片压汁）+25ml 橙子酱 + 100ml 冰水 + 15ml 糖 + 冰至满 + 摇匀入杯 + 2 份咖啡浓缩",
+                imgUrl: "i.waaac.com/tp/kfxl.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/kf1XDJncn31"
+            },
+            { id: 32, category: "益力多", name: "柠檬益力多 600", 
+                process: "入杯：1 瓶益力多｜雪克杯：5 片香水柠檬（约 40g）+ 冰块（400 刻度线）+ 捣出香味 + 150ml 绿茶 + 100ml 冰水 + 30ml 糖（视柠檬酸度调整）+ 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/yld.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/yl1XDJncn32"
+            },
+            { id: 33, category: "益力多", name: "百香果益力多 600", 
+                process: "入杯：1 瓶益力多｜雪克杯：1 颗新鲜百香果 + 2 片香水柠檬（约 18g）+ 冰块（300 刻度线）+ 捣出香味 + 100ml 绿茶 + 100ml 冰极 + 20ml 百香果酱 + 25ml 糖（视柠檬酸度调整）+ 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/yld.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/yl1XDJncn33"
+            },
+            { id: 34, category: "益力多", name: "芒果益力多 600", 
+                process: "入杯：1 瓶益力多｜雪克杯：1 颗新鲜芒果（捣碎）+25ml 芒果果酱 + 10ml 糖 + 100ml 绿茶 + 100ml 冰水 + 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/yld.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/yl1XDJncn34"
+            },
+            { id: 35, category: "益力多", name: "橙子益力多 600", 
+                process: "入杯：1 瓶益力多｜雪克杯：半颗新鲜橙子（压汁）+25ml 橙子果酱 + 15ml 糖 + 100ml 绿茶 + 100ml 冰水 + 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/yld.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/yl1XDJncn35"
+            },
+            { id: 36, category: "星冰乐系列", name: "星冰乐芒果 600", 
+                process: "入杯：1 勺脆啵啵｜冰沙机：1 颗新鲜芒果 + 30ml 芒果酱 + 20ml 糖 + 250g 冰 + 60ml 绿茶 + 40ml 轻脂乳 + 50ml 纯牛奶 + 打至碎状 + 入杯 + 喷雪顶",
+                imgUrl: "i.waaac.com/tp/xbllx.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/xb1XDJncn36"
+            },
+            { id: 37, category: "星冰乐系列", name: "星冰乐草莓 600", 
+                process: "入杯：1 勺脆啵啵｜冰沙机：3 颗新鲜草莓 + 30ml 草莓酱 + 25ml 糖 + 250g 冰 + 60ml 绿茶 + 40ml 轻脂乳 + 50ml 纯牛奶 + 打至碎状 + 入杯 + 喷雪顶",
+                imgUrl: "i.waaac.com/tp/xbllx.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/xb1XDJncn37"
+            },
+            { id: 38, category: "星冰乐系列", name: "星冰乐葡萄 600", 
+                process: "入杯：1 勺脆啵啵｜冰沙机：3 颗葡萄 + 30ml 葡萄酱 + 15ml 糖 + 250g 冰 + 60ml 绿茶 + 40ml 轻脂乳 + 50ml 纯牛奶 + 打至碎状 + 入杯 + 喷雪顶",
+                imgUrl: "i.waaac.com/tp/xbllx.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/xb1XDJncn38"
+            },
+            { id: 39, category: "星冰乐系列", name: "抹茶星冰乐 600", 
+                process: "冰沙机：15g 抹茶粉 + 60ml 热水 + 25ml 糖 + 320g 冰 + 40ml 轻脂乳 + 40ml 纯牛奶 + 打至碎状 + 入杯 + 喷雪顶",
+                imgUrl: "i.waaac.com/tp/bsxl.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/xb1XDJncn39"
+            },
+            { id: 40, category: "星冰乐系列", name: "咖啡星冰乐 600", 
+                process: "冰沙极：1 份咖啡液 + 极 20ml 糖 + 320g 冰 + 40ml 轻脂乳 + 40ml 纯牛奶 + 打至碎状 + 入杯 + 喷雪顶 + 盖半圆盖",
+                imgUrl: "i.waaac.com/tp/bsxl.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/xb1XDJncn40"
+            },
+            { id: 41, category: "冰沙系列", name: "芒果冰沙 600", 
+                process: "冰沙机：1 颗新鲜芒果 + 30ml 芒果酱 + 20ml 糖 + 300g 冰 + 150ml 绿茶 + 打至碎状 + 入杯即可",
+                imgUrl: "i.waaac.com/tp/bsxl.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/bs1XDJncn41"
+            },
+            { id: 42, category: "冰沙系列", name: "草莓冰沙 600", 
+                process: "冰沙机：3 颗新鲜草莓 + 30ml 草莓酱 + 20ml 糖 + 300g 冰 + 150ml 绿茶 + 打至碎状 + 入杯即可",
+                imgUrl: "i.waaac.com/tp/bsxl.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/bs1XDJncn42"
+            },
+            { id: 43, category: "冰沙系列", name: "葡萄冰沙 600", 
+                process: "冰沙机：5 颗葡萄 + 30ml 葡萄酱 + 20ml 糖 + 300g 冰 + 150ml 绿茶 + 打至碎状 + 入杯即可",
+                imgUrl: "i.waaac.com/tp/bssx.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/bs1XDJncn43"
+            },
+            { id: 44, category: "冰沙系列", name: "橙子冰沙 600", 
+                process: "冰沙机：半颗新鲜橙子（去皮）+30ml 橙子酱 + 20ml 糖 + 300g 冰 + 150ml 绿茶 + 打至碎状 + 入杯即可",
+                imgUrl: "i.waaac.com/tp/bsxl.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/bs1XDJncn44"
+            },
+            { id: 45, category: "冰沙系列", name: "抹茶冰沙 600", 
+                process: "冰沙机：15g 抹茶粉 + 50ml 热水 + 30ml 糖 + 300g 冰 + 100ml 绿茶 + 打至碎状 + 入杯即可",
+                imgUrl: "i.waaac.com/tp/bsxl.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/bs1XDJncn45"
+            },
+            { id: 46, category: "醇香生椰", name: "生椰啵啵 500", 
+                process: "入杯：2 勺脆啵啵 + 冰至 8 分满｜雪克杯：200ml 椰乳 + 100ml 水 + 搅拌均匀入杯",
+                imgUrl: "i.waaac.com/tp/cxsy.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/cs1XDJncn46"
+            },
+            { id: 47, category: "醇香生椰", name: "生椰芒果 500", 
+                process: "入杯极：1 颗小台芒（60g，捣碎）+25ml 芒果酱（抹杯）+1 勺脆啵啵 + 冰至满｜倒入 150ml 椰乳 + 100ml 冰水 + 封杯 + 喝前摇匀",
+                imgUrl: "i.waaac.com/tp/cxsy.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/cs1XDJncn47"
+            },
+            { id: 48, category: "醇香生椰", name: "生椰草莓 500", 
+                process: "入杯：3 颗新鲜草莓（捣碎）+25ml 草莓酱（抹杯）+1 勺脆啵啵 + 15ml 糖 + 冰至满｜倒入 150ml 椰乳 + 100ml 冰水 + 封杯 + 喝前摇匀",
+                imgUrl: "i.waaac.com/tp/cxsy.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/cs1XDJncn48"
+            },
+            { id: 49, category: "醇香生椰", name: "生椰抹茶 500", 
+                process: "入杯：冰至满｜雪克杯：20ml 糖 + 50ml 纯牛奶 + 120ml 椰乳 + 搅拌均匀入杯｜另取容器：10g 抹茶粉 + 50ml 热水 + 搅拌后入杯",
+                imgUrl: "i.waaac.com/tp/cxsy.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/cs1XDJncn49"
+            },
+            { id: 50, category: "热饮", name: "蜂蜜柚子酱 500", 
+                process: "雪克杯（热饮）：20ml 糖 + 2 勺柚子酱 + 150ml 绿茶 + 250ml 热水",
+                imgUrl: "i.waaac.com/tp/cxsy.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/re1XDJncn50"
+            },
+            { id: 51, category: "热饮", name: "蜂蜜柚子酱 700", 
+                process: "雪克杯（冷饮）：25ml 糖 + 2 勺柚子酱 + 200ml 绿茶 + 150ml 冰水 + 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/cxsy.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/re1XDJncn51"
+            },
+            { id: 52, category: "热饮", name: "生姜姜母茶 500", 
+                process: "雪克杯（热饮）：15ml 糖 + 2 勺生姜酱 + 150ml 红茶 + 250ml 热水",
+                imgUrl: "i.waaac.com/tp/bdnmc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/re1XDJncn52"
+            },
+            { id: 53, category: "热饮", name: "生姜姜母茶 700", 
+                process: "雪克杯（冷饮）：25ml 糖 + 2 勺生姜酱 + 200ml 红茶 + 150ml 冰水 + 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/bdnmc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/re1XDJncn53"
+            },
+            { id: 54, category: "暴打柠檬茶", name: "金桔柠檬 600", 
+                process: "雪克杯：3 片香水柠檬 + 冰块（300 刻度线）+ 捣出香味 + 3 极金桔（压汁）+50ml 糖（视柠檬酸度调整）+200ml 绿茶 + 100ml 冰水 + 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/bdnmc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/bd1XDJncn54"
+            },
+            { id: 55, category: "暴打柠檬茶", name: "金桔柠檬 700", 
+                process: "雪克杯：3 片香水柠檬 + 冰块（400 刻度线）+ 捣出香味 + 3 颗金桔（对半切开压汁）+50ml 糖（视柠檬酸度调整）+200ml 绿茶 + 150ml 冰水 + 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/bdnmc1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/bd1XDJncn55"
+            },
+            { id: 56, category: "暴打柠檬茶", name: "柠檬红茶 600", 
+                process: "雪克杯：6 片香水柠檬（约 45g）+ 冰块（400 刻度线）+ 捣出香味 + 250ml 红茶 + 40ml 糖（视柠檬酸度调整）+ 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/bdnmc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/bd1XDJncn56"
+            },
+            { id: 57, category: "暴打柠檬茶", name: "柠檬红茶 700", 
+                process: "雪克杯：6 片香水柠檬（约 45g）+ 冰块（400 刻度线）+ 捣出香味 + 250ml 红茶 + 40ml 糖（视柠檬酸度调整）+ 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/bdnmc1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/bd1XDJncn57"
+            },
+            { id: 58, category: "暴打柠檬茶", name: "柠檬绿茶 600", 
+                process: "雪克杯：6 片香水柠檬（约 45g）+ 冰块（400 刻度线）+ 捣出香味 + 250ml 绿茶 + 45ml 糖（视柠檬酸度调整）+ 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/bdnmc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/bd1XDJncn58"
+            },
+            { id: 59, category: "暴打柠檬茶", name: "柠檬绿茶 700", 
+                process: "雪克杯：6 片香水柠檬（约 45g）+ 冰块（400 刻度线）+ 捣出香味 + 250ml 绿茶 + 45ml 糖（视柠檬酸度调整）+ 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/bdnmc1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/bd1XDJncn59"
+            },
+            { id: 60, category: "暴打柠檬茶", name: "葡萄柠檬茶 600", 
+                process: "雪克杯：5 片香水柠檬（约 45g）+ 冰块（400 刻度线）+ 捣出香味 + 30ml 葡萄酱 + 20ml 糖 + 250ml 绿茶（视柠檬酸度调整）+ 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/bdnmc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/bd1XDJncn60"
+            },
+            { id: 61, category: "暴打柠檬茶", name: "葡萄柠檬茶 700", 
+                process: "雪克杯：5 片香水柠檬（约 45g）+3 颗新鲜葡萄 + 冰块（400 刻度线）+ 捣出香味 + 30ml 葡萄酱 + 20ml 糖 + 250ml 绿茶（视柠檬酸度调整）+ 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/bdnmc1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/bd1XDJncn61"
+            },
+            { id: 62, category: "暴打柠檬茶", name: "鸭屎柠檬茶 600", 
+                process: "雪克杯：6 片香水柠檬（约 45g）+ 冰块（400 刻度线）+ 捣出香味 + 250ml 鸭屎香 + 45ml 糖（视柠檬酸度调整）+ 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/bdnmc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/bd1XDJncn62"
+            },
+            { id: 63, category: "暴打柠檬茶", name: "鸭屎柠檬茶 700", 
+                process: "雪克杯：6 片香水柠檬（约 45g）+ 冰块（400 刻度线）+ 捣出香味 + 250ml 鸭屎香 + 45ml 糖（视柠檬酸极调整）+ 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/bdnmc1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/bd1XDJncn63"
+            },
+            { id: 64, category: "暴打柠檬茶", name: "芒果柠檬茶 700", 
+                process: "雪克杯：5 片香水柠檬（约 45g）+30g 新鲜芒果 + 冰块（400 刻度线）+ 捣出香味 + 30ml 芒果酱 + 15ml 糖 + 250ml 绿茶（视柠檬酸度调整）+ 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/bdnmc1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/bd1XDJncn64"
+            },
+            { id: 65, category: "暴打柠檬茶", name: "草莓柠檬茶 700", 
+                process: "雪克杯：5 片香水柠檬（约 45g）+2 颗新鲜草莓 + 冰块（400 刻度线）+ 捣出香味 + 30ml 草莓酱 + 20ml 糖 + 250ml 绿茶（视柠檬酸度调整）+ 冰至满 + 摇匀入极",
+                imgUrl: "i.waaac.com/tp/bdnmc1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/bd1XDJncn65"
+            },
+            { id: 66, category: "暴打柠檬茶", name: "青提柠檬茶 700", 
+                process: "雪克杯：极 5 片香水柠檬（约 45g）+3 颗新鲜青提 + 冰块（400 刻度极）+ 捣出香味 + 30ml 青提酱 + 20ml 糖 + 250ml 绿茶（视柠檬酸度调整）+ 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/bdnmc1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/bd1XDJncn66"
+            },
+            { id: 67, category: "暴打柠檬茶", name: "一桶柠檬茶 1000", 
+                process: "雪克杯：8 片香水柠檬（约 60g）+ 冰块（500 刻度线）+ 捣出香味 + 350ml（红茶 / 绿茶 / 鸭屎香）+60ml 糖（视柠檬酸度调整）+ 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/bdnmc1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/bd1XDJncn67"
+            },
+            { id: 68, category: "牛乳茶", name: "红糖牛乳茶 700", 
+                process: "入杯：2 勺红糖珍珠｜雪克杯：150ml 红茶 + 40ml 轻脂乳 + 100ml 纯牛奶 + 25ml 糖 + 冰至 8 分满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/nlc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/rl1XDJncn68"
+            },
+            { id: 69, category: "牛乳茶", name: "草莓牛乳茶 700", 
+                process: "雪克杯：3 颗新鲜草莓（捣碎）+25ml 糖 + 30ml 草莓酱 + 200ml 绿茶 + 100ml 纯牛奶 + 40ml 轻脂乳 + 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/nlc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/rl1XDJncn69"
+            },
+            { id: 70, category: "牛乳茶", name: "芒果牛乳茶 700", 
+                process: "雪克杯：1 颗新鲜芒果（捣碎）+20ml 糖 + 30ml 芒果酱 + 200ml 绿茶 + 100ml 纯牛奶 + 40ml 轻脂乳 + 冰至满 + 摇匀入杯",
+                imgUrl: "i.waaac.com/tp/nlc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/rl1XDJncn70"
+            },
+            { id: 71, category: "牛乳茶", name: "抹茶牛乳茶 700", 
+                process: "入杯：200ml 纯牛奶 + 25ml 糖（搅拌均匀）+ 满杯冰块｜雪克杯：另取容器 12g 抹茶粉 + 100ml 热水（搅拌后入杯）",
+                imgUrl: "i.waaac.com/tp/nlc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/rl1XDJncn71"
+            },
+            { id: 72, category: "牛乳茶", name: "玫瑰牛乳茶 700", 
+                process: "雪克杯：100ml 绿茶 + 100ml 纯牛奶 + 40ml 轻脂乳 + 5ml 糖 + 1 小勺玫瑰酱 + 冰至 550ml 刻度线",
+                imgUrl: "i.waaac.com/tp/nlc.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/rl1XDJncn72"
+            },
+            { id: 73, category: "蛋糕面包", name: "蛋糕胚", 
+                process: "鸡蛋 45 个｜①蛋清部分：650克斤白糖 + 15g 塔塔粉 + 10g 盐，全程快速打发｜②蛋黄部分：牛奶 250克+ 水250克+500克大豆油 + 15g 泡打粉 + 250g 白棉糖 + 650g 糕点粉 + 100g 玉米淀粉，按一个方向搅拌至光滑，加入蛋黄拌匀｜③取 1/3 蛋清与蛋黄糊搅匀，再倒入剩余蛋清中全部拌匀｜④烤箱：上火 180℃、下火 160℃先极 5 分钟，再调上火 160℃烤 25-30 分钟",
+                imgUrl: "i.waaac.com/tp/dgp.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn73"
+            },
+            { id: 74, category: "蛋糕面包", name: "虎皮面包", 
+                process: "蛋黄：500 克（1 斤）・全蛋：1 个・白糖：150 克・盐：少许（5 克）・生粉：65 克（打发至发白后换挡加入）・油：少许，不过 1 两，(50 克 - 100 克油)（蛋黄分离出来要立马打，不宜放太久）・｜一起放机器搅至乳白色后放生粉搅拌均匀再加少许油，搅拌均匀后烤盘垫纸刮平放入烤。上火：220. 下火不用。烤箱震一下排空气。烤 10 分钟，（6 分钟换头烤）.・｜注：快速打发至乳白色换低速后加入生粉搅拌均匀，再缓慢倒入色拉油，搅拌均匀后取出倒入事先放好油纸垫底的烤盘。上火 220, 下火不用，烤 10 分钟出炉，在烤到第 6 分钟时换头烤，烤箱震一下排气",
+                imgUrl: "i.waaac.com/tp/hpmb.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn74"
+            },
+            { id: 75, category: "蛋糕面包", name: "吐司面包", 
+                process: "（面包粉即糕点粉（高筋粉））｜吐司。老面：面包粉：3 斤 3 两.（热可以加加快发酵时间），酵母：25 极（酵母怕冷怕热）牛奶：1L（冬天加热，温热）。｜「主面（面粉）面粉：1 斤 7 两。白糖：8 两 5。改良剂：10 克。奶粉：70 克。炼乳：75 克。鸡蛋极：5 个，水：405克}① 上火：200 下火：190 20 分钟左右」。（烘焙油）烘焙油：250 克。盐：25 克。}②（烘焙油要切碎）｜先把①材料倒入桶打发起泡再把②材料打到烘焙油溶后拿来分面.",
+                imgUrl: "i.waaac.com/tp/tsmb.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn75"
+            },
+            { id: 76, category: "后厨操作", name: "珍珠煮制", 
+                process: "1 包珍珠 + 5000cc 水 + 200ml 黑糖 / 红糖｜①5000cc 水煮沸，倒入珍珠（边倒边搅）｜②珍珠浮起后调至 2500w 煮 20 分钟（每 2-3 分钟搅 1 次）｜③关火焖 20 分钟｜④自来水冲洗珍珠（去黏稠物），再用过滤水洗｜⑤另起锅倒 200ml 黑糖 / 红糖，熬 5 分钟后加入珍珠｜保质期 8 小时（珍珠有硬心可电磁炉预热 2-3 分钟，期间搅拌）",
+                imgUrl: "i.waaac.com/tp/czbz.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/hc1XDJncn76"
+            },
+            { id: 77, category: "后厨操作", name: "珍珠锅煮制", 
+                process: "1 包珍珠 + 20000cc 水｜①量 2000ml 水倒入珍珠锅，启动煮水｜②水沸后放半包 / 1 包珍珠，2 分钟后搅拌（防结块）｜③过滤水洗珍珠｜④另起锅倒 200ml 黑糖 / 红糖，熬 5 分钟加珍珠｜保质期 8 小时，保温 50-60℃",
+                imgUrl: "i.waaac.com/tp/czbz.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/hc1XDJncn77"
+            },
+            { id: 78, category: "后厨操作", name: "冷泡红茶", 
+                process: "100g 茶叶 + 2500cc 水 + 1500g 冰（比例 1:25:15）｜①水沸后控温 95℃，倒入茶叶焖盖泡 12 分钟｜②过滤茶叶，加入冰块搅匀｜保质期 8 小时",
+                imgUrl: "i.waaac.com/tp/czbz.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/hc1XDJncn78"
+            },
+            { id: 79, category: "后厨操作", name: "冷泡绿茶", 
+                process: "100g 茶叶 + 3000cc 水 + 1500g 冰（比例 极 1:30:15）｜①水沸后控温 75℃，倒入茶叶开盖泡 6 分钟｜②过滤茶叶，加入冰块搅匀｜保质期 8 小时",
+                imgUrl: "i.waaac.com/tp/czbz1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/hc1XDJncn79"
+            },
+            { id: 80, category: "后厨操作", name: "冷泡鸭屎香", 
+                process: "100g 茶叶 + 2500cc 水 + 1500g 冰（比例 1:25:15）｜①水沸后控温 95℃，倒入茶叶焖盖泡 10 分钟｜②过滤茶叶，加入冰块搅匀｜保质期 8 小时",
+                imgUrl: "i.waaac.com/tp/czbz1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/hc1XDJncn80"
+            },
+            { id: 81, category: "后厨操作", name: "烧仙草粉制作", 
+                process: "100g 烧仙草粉 + 1200ml 水 + 100g 糖（比例 1:1:12）｜①100g 仙草粉 + 400ml 水搅匀｜②800ml 水煮沸，倒入仙草粉糊 + 100g 糖｜③1200w 火煮至沸腾（搅拌防糊）｜保质期 3 天",
+                imgUrl: "i.waaac.com/tp/czbz1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/hc1XDJncn81"
+            },
+            { id: 82, category: "后厨操作", name: "糖度和冰块调准", 
+                process: "1. 少糖：（如标准 30ml 糖那就放 22ml 糖）｜2. 半糖：（如标准 30ml 糖放 15ml）｜3. 微糖：（如标准 30ml 糖放 7ml）｜4. 少冰：茶汤量 + 50ml（或换水，糖量不变）｜5. 去冰：茶汤量 + 100ml（或换水，糖量 + 5ml）｜6. 常温：茶汤量 + 150ml（或换水，糖量 + 10ml）",
+                imgUrl: "i.waaac.com/tp/czbz1.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/hc1XDJncn82"
+            },
+            { id: 812, category: "后厨操作", name: "粉熬汤方法", 
+                process: "1. 冷水放入当天捞出来的骨头，然后放药袋、放鸡肉一只，白芷三至四片，姜放三至四个，冰糖放十二棵包好放入汤内。2. 水开后放新骨头，把血沫捞完后放蚝油一勺、料酒半勺、白醋半勺，在血沫捞完，再放胡椒粉一勺、在等十五分钟后可关火。《羊汤同上面一样，羊汤只是不放蚝油个》3. 第二天早上，汤开把血沫捞完后牛汤《放牛油》羊汤《放羊油》各半勺、放鲜香王一勺，牛肉汤料一勺。羊汤也放鲜香王一勺、羊肉汤料一勺。放鱼用药袋包好，鱼半条、香菜根，牛肉汤再放一个姜、一点牛肉中药材包好放入汤内即可。羊汤只放鱼跟香菜根，牛汤放盐一勺、羊汤放盐大半勺羊汤放羊肉煮、牛汤放牛肉煮，各煮四十分钟后捞出备用。｜卤羊肉1. 姜放两片、羊肉中药材四小勺，包好放入清水放大豆油少许、鲜香王少许、羊肉汤料一小勺、盐一小勺，后水开放羊肉卤10至20分钟关火后焖10至15分钟好入味。｜熬牛油1. 大豆油少许，猪油少许、把油练好放入牛肉中药材一点，熬好先放豆拌酱一勺、然后放牛肉中药材一勺、熬几分钟后关火。熬羊油同上只是关火后放一勺红辣椒",
+                imgUrl: "i.waaac.com/tp/ytff.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/hc1XDJncn82"
+            },
+            { id: 832, category: "后厨操作", name: "汤粉配料", 
+                process: "牛肉中药材配料：八角：1.8斤　花椒：1.8斤　草果：1.5斤　桂皮：1斤　砂仁：1.8斤陈皮：3斤　丁香：0.5斤　香叶：1斤　小茴香：1斤　白蔻：1斤　毕波：1.5斤白芷：1.5斤　山奈：1.5　香毛草：1斤｜牛肉汤配料：鲜香王（白）0.4斤　鲜香王（红）0.4斤　鸡精：1.5斤　味精：4斤花椒：0.5斤　骨粒香：0.9斤　胡椒粉：0.25斤｜羊肉中药材配料：花椒：30克　桂皮：6克　八角：6克　山奈：5克　小茴香：9克毕波：15克　草果：4克　干姜：8克　白芷：30克　丁香：8克白蔻：8克　沙仁：8克　香茅：8克　千里香：8克　毛桃：8克香籽：12克　红蔻：8克　陈皮：20克　山楂：8克　香叶：15克肉蔻：7克　香毛草：15克｜羊肉汤配料：味精：4斤　鸡精：1.5斤　花椒：0.5　胡椒粉：0.5斤鲜香王（红）0.4斤　骨粒香：0.45斤",
+                imgUrl: "i.waaac.com/tp/tfpl.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/hc1XDJncn82"
+            },
+            { id: 83, category: "蛋糕面包", name: "老奶油蛋糕（预拌蛋糕胚）", 
+                process: "老奶油蛋糕（预拌粉蛋糕胚） ｜全蛋：20个 水：80克 液态酥油：60克 ①、倒入搅拌器中快速打发2-3分钟至蛋液发泡。 预拌粉：1斤4两 蛋糕油：80克 泡打粉：20克 ｜②、加入预拌粉中快速1分钟将粉中糖搅拌至融化。 ｜③、加入蛋糕油中速搅拌均匀。 ｜④、挤35克一个长椭圆进入烘烤，宽3公分，10公分长，1.5公分。 ｜⑤、将两块蛋糕表面在抹上30克左右的酱，沾上奶粉和椰蓉即可。 ｜注：所有材料全部加入，打到越浓越好。 上火：180°,下火：150°,烤1-2分钟出炉，在烤到第8分钟左右掉头继续极，根据烤箱调温度，总共烤10-12分钟即可出炉。",
+                imgUrl: "i.waaac.com/tp/lnydg.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn83"
+            },
+            { id: 84, category: "蛋糕面包", name: "手撕面包", 
+                process: "手撕面包 （糕点粉） 2.5斤面包粉（1250克） 白米糖 0.5斤（250克） 酵母：15克-20克 黄油：2两（100克） 盐：15极 改良剂：5-10克 奶粉：50克 鸡蛋：2个 ｜①. 将以上倒入桶内 （注：第一次滴入50克油是为了让面团吸入油，第二次滴油是为了防沾手） 牛奶：2两（100克） 水：8两（400克） ②. 倒入桶内与①混合打，冬温夏凉，打至面团光滑 先慢后快，直到起泡加一次色拉油，加入50克油，油吸完换快档，滴点油就可以了。 醒面20分钟 上火150° 下火210° 烤15-18分钟换头烤，烤至金黄色即可",
+                imgUrl: "i.waaac.com/tp/ssmb.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn84"
+            },
+            { id: 85, category: "蛋糕面包", name: "面包肉松卷", 
+                process: "面包 肉松卷 ｜选一个600克的甜面团，擀成一条长方形状，长度刚好放入烤盘顶到烤盘边，宽度为烤盘宽度的一半，铺平在烤盘里再往面上打眼搓孔便于排气，然后放入发酵箱进行发酵至到比原来大1倍多，发酵时间为1小时左右。将发酵好的半成品取出刷上蛋液，洒些芝麻。放入烤箱。烤箱需提前预热到设定温度，上火为210°,下火为160°,烤至5分钟左右掉头继续烤3-5分钟即可出炉，出炉之时重重的摔，便于考熟的面包排气，然后趁热刷上面包亮光剂，待放凉后将其翻面，抹上沙拉酱，然后卷成圆棍状，用刀片切去两头不平的地方，接着平均切成大小平均的圆柱状，往切好的圆柱两刷上沙拉酱，沾上肉松，方可制作完成。 注：海苔肉松卷（瘦丝肉松卷）的做法同上，不同的是考好面包卷在放入海苔上再卷一次，海苔铺平在烤盘内，沿边缘四周及中间挤上沙拉酱。",
+                imgUrl: "i.waaac.com/tp/mbrsj.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn85"
+            },
+            { id: 86, category: "蛋糕面包", name: "拔丝蛋糕", 
+                process: "拔丝蛋糕 2斤半1250克鸡蛋 白糖8两400克 ｜①将以上 打10分钟至白糖打化，快档打发 面粉1斤4两 蛋糕油30g 泡打粉15g 盐 5g｜ ② 将以上搅拌均匀后放油 大豆油1斤 ｜③ 肉松：半斤 ④ 放油后放肉松 上180° 下160° 烤：15分钟",
+                imgUrl: "i.waaac.com/tp/bsdg.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn86"
+            },
+            { id: 87, category: "蛋糕面包", name: "糯米蛋糕（网红粑粑蛋糕）", 
+                process: "糯米蛋糕（网红粑粑蛋糕） 鸡蛋：5斤 白糖：3斤｜ ① 先把白糖打化后加入备好的｜②材料继续搅拌 面粉0.8两 糯米粉：2斤2极 牛奶香精：10克 盐：5克 蛋糕油极：80克 泡打粉：30克 ② 上火：190 下火：180 上色换头 ｜注：将①先快速打发均匀，使白糖完全融化，呈淡黄色粘稠状，暂停机器倒入②，先低速打发20秒极右，然后换快速打发，搅拌均匀即可取出倒入事先刷好油的模具内，放7分满。油中加入些许面粉搅拌可以防止不粘模具。上火为190°,下火为180°,先烤8-10分钟，然后换头再烤4-5分钟，颜色金黄即可出炉。",
+                imgUrl: "i.waaac.com/tp/nmdg.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn87"
+            },
+            { id: 88, category: "蛋糕面包", name: "小馒头（蜂蜜小面包）", 
+                process: "小馒头（蜂蜜小面包） 面粉 6斤 面包粉 2斤 白糖 0.8两 水 4.5斤（冬热夏冰） 小米料 0.3两（15克）——> 可不放 （酵母粉 1斤 改良剂 8两 盐 8两 牛奶香精（新500）4两 蛋白糖（3两） ） 注：冬天加热水，夏天加冰水， 快打好的时候滴3滴油，适量放一些油，防止沾手。 擀面时不要太宽， 放至发酵箱发酵时要比原来大至2-3倍，使小面包粘连在一起，然后倒入大豆油至小面包飘浮状态，烤箱应提前预热到设定好的温度。（180°-190°） 上火： 下火：240° 烤15分钟 先烤10分钟，掉头再烤",
+                imgUrl: "i.waaac.com/tp/xmtfmmb.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn88"
+            },
+            { id: 89, category: "蛋糕面包", name: "香蕉蛋糕", 
+                process: "香蕉蛋糕 鸡蛋6.4斤 白糖4.5斤 香蕉4斤（去皮） 水或牛奶1斤 ①. 将①所有材料倒入打发桶快速搅拌7-8分钟，把白糖和香蕉搅化，然后倒入②，极低速搅拌使面粉融入，再快速搅拌3分钟左右，然后换低速缓慢倒入大豆油，搅拌即可。 面粉：5.1斤 蛋糕油：40g 泡打粉：30g 盐：20g 葡萄糖粉：80g 香兰素：20g →可用蜂蜜替代 ②. 用布袋圆嘴挤在事先刷好油的模具内，挤至8-9分满即可放入烤箱烘烤。上火200-210,下火180,烤至7分钟时换头烤,再烤3-5分钟左右,总体时间为10-12分钟。 大豆油7两. ③ 注：如使用铝烤盘，则铝极盘需放入烤箱加热至滴水沸腾时再取出，然后趁热挤满整件模具，整个过程要快，不能使铝烤盘变凉。",
+                imgUrl: "i.waaac.com/tp/xjdg.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn89"
+            },
+            { id: 90, category: "蛋糕面包", name: "月饼皮", 
+                process: "月饼皮.（量大可用机器排风机打发，车间方可同手动搅拌） 糖浆：4.5斤 大豆油：1.7斤 枧水：30克 面粉：6斤 ①. 先搅拌至完全稀释糖浆和大豆油， ②. 倒入②继续搅拌均匀无干面粉，将成品整极，洒上点干面粉，盖上保鲜膜醒面20分钟。 注：月饼皮最少不能少于30克，最多不能多于50克，100克模具. 馅与皮的比例通常6:4,7:3. 提前预热烤箱，上火200,下火160-170°,烤至10-13分钟时，月饼稍微有点金黄色时取出，刷上蛋黄液，再放入烤箱继续烤5-8分钟.",
+                imgUrl: "i.waaac.com/tp/ybp.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn90"
+            },
+            { id: 91, category: "蛋糕面包", name: "花生饼", 
+                process: "上:180 下:170 花生饼 棉糖:3.8斤 黄油:1斤 双鸡蛋:7个 泡打粉:15克 盐:5克 小苏打:25克 臭粉(食用氨明发):20克 大豆油:1.1斤 ② 水:1.7斤 ③ 面粉:5斤3两 ③ ①.②.打至7-8分后加入面粉（直接倒入） ｜注：面团45克大小，烤13分钟，9分钟换头。 先沾芝麻，然后用手拿住面团，另一手用手掌将沾芝麻的面团顶平，然后用食指弯曲的形状转动面团打一个洞，且不能打破，留下跟成型的厚度一样。 上火：210 下火：160-170",
+                imgUrl: "i.waaac.com/tp/hsb.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn91"
+            },
+            { id: 92, category: "蛋糕面包", name: "猪扒包", 
+                process: "猪扒包 将做好的甜面团分65克的小面团，擀平成不规则的圆形，放入模具进入发酵箱发酵1个小时， 发酵好后取出刷上蛋液，放入半片烤熟的鸡排，挤上沙拉酱，洒上芝士碎，在一侧挤上一条沙拉酱即可放入烤箱，上火为190、下火180°,烤至5分钟左右换头烤，总共时间为8-10分钟，颜色金黄，出炉后刷上面包亮光剂，洒上点干葱。 放入半片烤熟的鸡排，挤上沙拉酱，洒上芝士碎即可放入烤箱。",
+                imgUrl: "i.waaac.com/tp/zpb.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn92"
+            },
+            { id: 93, category: "蛋糕面包", name: "红丝绒蛋糕.", 
+                process: "红丝绒蛋糕.（此配方为两个烤盘的量） 鸡蛋(全蛋):2斤2两 牛奶:200克 红丝绒粉:1斤5两 蛋糕油:60克 大豆油:100克 液态酥油:100克 ①. 先快速搅拌①至3分钟左右，再倒入②，先低后快，搅拌至均匀粘稠再换成挡缓慢倒入③，搅拌均匀即可取出倒入烤盘待烤。 (180-190) (150-160) 上火:180°,下火:160°烤15分钟,10分钟左右调头烤.",
+                imgUrl: "i.waaac.com/tp/hsrdg.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn93"
+            },
+            { id: 94, category: "蛋糕面包", name: "胡萝卜牛奶排包", 
+                process: "胡萝卜牛奶排包 面包粉:2000克 酵母:25克 水极:1200克 ① 放一起低速搅匀,极膜醒面40分钟左右,冬天放发酵箱发酵。 面包粉:2000极 白糖:800克 酵母:20克 改良剂:20克 奶粉:200克 牛奶:400克 全鸡蛋:12个 黄色素:几滴 烘焙油:600克 盐:40克 极 ② 待①发酵至有蜂窝状加入②,一起搅拌,先低后快,搅至面团光滑后放入③继续搅拌至光滑,使烘焙油完全融入面团即可取出放在事先刷好大豆油的操作台上醒面20分钟,再分成65克每个的小面团,然后平均分成大小一样的两个小面团,用擀面杖擀成鞋整片状,极搓成小面圆柱之后再搓成20公分长度的圆棍状,放入烤盘摆好,再放入发酵箱发酵,需发酵到比原来大1倍多有余即可烤箱烘烤。 刷上蛋液 烤箱上火:210°,下火为160°.烤5分钟调头继续烤,总体烤8分钟左右即可出炉。",
+                imgUrl: "i.waaac.com/tp/hlbnnpb.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn94"
+            },
+            { id: 95, category: "蛋糕面包", name: "榴莲）、酸奶大麻花", 
+                process: "（榴莲）、酸奶大麻花 面包粉1斤7两 面粉1斤7两 改良剂5克 酵母15克到20克 白糖5两 盐15克 奶粉40克 ① 准备好①材料倒入桶内，再倒入②，先慢后快，打至光滑起模、发响声即可加入③，将黄油打碎至完全融入面团，然后滴入大豆油即可取出备用，将面团分成80-90克大小的小面团，放入干净烤盘盖上保鲜膜醒面备用。 水1斤2两 鸡蛋2个 ② 大豆油3两3 黄油100克 ③ 将醒好的小面团擀成12-15公分的薄垫状，换边继续擀成似圆形状，然后翻过来擀好的面团，底边用手挤面团粘在操作台上，上边拉平拉直成一条直线，成一个长方形状，然后在上边下来1公分处挤上一条圆柱形的酸奶酱，卷成圆柱状放置3分钟左右，再用手搓成45-50公分长的圆棍状，然后用手 捏住两头反向搓，就可以搓成麻花生状。",
+                imgUrl: "i.waaac.com/tp/sndmh.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn95"
+            },
+            { id: 96, category: "蛋糕面包", name: "橄榄蛋糕", 
+                process: "橄榄蛋糕 鸡蛋:3斤4两 白糖:2斤1两 纯牛奶:3两 ① 快速打发使白糖融化，快速打5分钟，换低速打10分钟即可加入②，先低速搅拌1分钟再快速打发，打发至粘稠淡黄色状即可。 面粉:2斤 盐:5克 蛋糕油:60克 泡打粉:20克 蜂蜜50克(可不加) 吉士粉20克(可不加) ② 倒入③，中速搅拌均匀即可备用。 将事先准备好的模具烤盘事先清理干净，刷油(油中加面粉防沾)，然后放7-8分满即可烘烤。 上火:200,下火:190,先烤10分钟换头再烤，再烤3-5分钟，呈金黄色即可出炉。 大豆油100g③",
+                imgUrl: "i.waaac.com/tp/gldg.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn96"
+            },
+            { id: 97, category: "蛋糕面包", name: "板栗饼皮", 
+                process: "板栗饼皮 面粉:4斤(2000克) 水:1.5斤(800克) 大豆油:1.2斤(600克) 白糖:4两(200克) ① 所有材料加入桶内先低速打发至无干粉换中速继续打发，打发至面团光滑可拉模即可。 注:饼皮打好，取出分饼皮20-30克左右，先把分好的饼皮往里加入拇指头大小的油馅，然后擀面团成大小均一的面皮，加入事先分好饼馅30克每个，用包包子的手法将其包好，沾上芝麻放入烤盘，用平整的罐子一面将其压成厚度均一的饼状。放入烤盘备烤。 上火:150°-170°(先烤5分钟,然后往烤盘洒油, 下火:200°-220°到8-10分钟翻面淋油换头烤, (16-20分钟)再烤10分钟左右颜色金黄即可出炉. 油馅:面粉1斤半+7.5两油. (1:0.5)",
+                imgUrl: "i.waaac.com/tp/blbp.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn97"
+            },
+            { id: 98, category: "蛋糕面包", name: "甜面团", 
+                process: "老面① 面包粉:2500克 酵母:40克 牛奶:1500克(冬温夏平温,稍冰) （老面夏天不能加冰水，常温）先打发至干粉完全消失，打至像灿毛帅一样，然后盖膜醒面。自然醒面至少3-4小时，盖膜放发酵箱醒面90分到120分钟 ｜主面② 面包极:2500克 白糖:900克 改良剂:30克 奶粉:200克 炼乳:极 200克 全蛋:10个 水:800极(夏天用冰水) （老面发醒好后，倒入桶内跟主面一起搅拌，先低档打至无干粉即可换中档搅拌，搅拌至发响声起倒入③，低档搅拌1分钟左右换快档快速拌至几秒即可取出备用。 ｜③ 盐:50克 烘焙油:500克 （①+②搅至光滑再放盐和烘焙油，打好拿出盖膜备用。 注:烘焙油尽量切碎。｜甜面团可制作：肉松卷面包600克/6个，金枕面包65克/个，香肠面包65克/个，披萨65克/个",
+                imgUrl: "i.waaac.com/tp/tmt.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn98"
+            },
+            { id: 938, category: "蛋糕面包", name: "金枕面包", 
+                process: "选一个65克的甜面团，擀成一条长方形状，长度刚好放入金枕面包盒模具内，铺平打眼排气再放入模具，然后放入发酵箱进行发酵至到比原来大1倍多，发酵时间为1小时左右。｜将发酵好的半成品取出刷上蛋液，肉松，鸡排（每个放三个切好的鸡排），沙拉酱，蕃茄酱，葱花。放入烤箱。烤箱需提前预热到设定温度，上火为210°,下火为160°,烤至5分钟左右掉头继续烤3-5分钟即可出炉，然后趁热刷上面包亮光剂，方可制作完成。",
+                imgUrl: "i.waaac.com/tp/tmt.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn98"
+            },
+            { id: 931, category: "蛋糕面包", name: "香肠面包", 
+                process: "选一个65克的甜面团，切分成两份搓成两条长度为，香肠模具盒的长度，把两头捏实合并，然后放入发酵箱进行发酵至到比原来大1倍多，发酵时间为1小时左右。｜将发酵好的半成品取出刷上蛋液，中间放跟火腿肠，沙拉酱，蕃茄酱，芝士碎，葱花。放入烤箱。烤箱需提前预热到设定温度，上火为210°,下火为160°,烤至5分钟左右掉头继续烤3-5分钟即可出炉，然后趁热刷上面包亮光剂，方可制作完成。",
+                imgUrl: "i.waaac.com/tp/tmt.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn98"
+            },
+            { id: 936, category: "蛋糕面包", name: "披萨", 
+                process: "选一个65克的甜面团，用擀面杖擀成适合模具大小的圆饼，排气，然后放入发酵箱进行发酵至到比原来大1倍多，发酵时间为1小时左右。｜将发酵好的半成品取出刷上蛋液，洒些肉松，胡萝卜丁跟香肠丁，沙拉酱，蕃茄酱，芝士碎，葱花。放入烤箱。烤箱需提前预热到设定温度，上火为210°,下火为160°,烤至5分钟左右掉头继续烤3-5分钟即可出炉，然后趁热刷上面包亮光剂，方可制作完成。",
+                imgUrl: "i.waaac.com/tp/tmt.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn98"
+            },
+            { id: 99, category: "蛋糕面包", name: "海绵蛋糕", 
+                process: "海绵蛋糕 （27个鸡蛋） 鸡蛋2斤7两 白糖800克 牛奶250克 ① 快档打发至融化白糖，5-8分钟左右，然后停机倒入②，换低档先搅拌再切快档搅拌均匀，再换低档缓慢倒入③。 普通面粉（也可选低粉）1000g 蛋糕油60克 泡打粉20克 盐10克（可不加） ② 搅拌均匀即可。 大豆油200克③ 打两个鸡蛋只取蛋黄，放入裱花袋④ 倒入事先准备的烤盘内，烤盘内事先铺上油纸垫底极油纸高过烤盘边。将其铺完铺平整，然后用挤沙拉酱的手法，把④剂在表面即可放入烤箱烘烤。 上火:160° 下火:165° 烤50分钟左右. 烤至40分钟左右换头.",
+                imgUrl: "i.waaac.com/tp/hmdg.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn99"
+            },
+            { id: 100, category: "蛋糕面包", name: "枣糕", 
+                process: "枣糕 鸡蛋:40个 白糖:3.5斤 枣泥:2斤(不能沾油) 小苏打:30克 盐:5克(可不放) ① 快速打发至7分满，打至10分钟以上，然后换低档倒入②，搅拌至均匀(1-2分钟左右)加入③，然后换快档继续搅拌。然后倒入事先准备好的烤盘内，烤盘内铺上油纸，油纸需高过烤盘边，将其铺平在烤盘极，然后洒上芝麻即可放入烤箱烘烤。 面粉:4斤 泡打粉:40克 ② 油:3.3斤(大豆油)③ 烤箱加热至设定温度. 上火为180°,下火为170°. 整体烤50分钟,40分钟左右换头烤.",
+                imgUrl: "i.waaac.com/tp/zg.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn100"
+            },
+            { id: 101, category: "蛋糕面包", name: "法式脆皮蛋糕", 
+                process: "法式脆皮蛋糕 鸡蛋42个-45个,极 4斤5两 白糖3极 ① 极快速打发，打至7-8分满，然后换低档，将②用手抓一把一把的洒入桶内，直至洒完，要把边上的料都一起打至溶完即可取出倒入模具进行烤,需要注意的是洒完面粉也要低速搅拌均匀，不可开开关太速。 面粉(普通)3斤 葡萄糖:5克(增色) 纯香已基麦芽粉(芳):5克,(增香去腥) 白熊香兰粉(香):5克 盐:10克 ② (注:天冷气温较低时,要烧热水放置桶底加温,不加温则打发不起). 上火:210° 下火:220° 极(8-10分钟),先烤至5-6分钟换头烤。 (注:给模具刷油前加入一把面粉进行搅散混合,然后再给模具刷极,这样不易沾模具,油也要适量).",
+                imgUrl: "i.waaac.com/tp/fscpdg.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn101"
+            },
+            { id: 102, category: "蛋糕面包", name: "黑森林蛋糕胚", 
+                process: "黑森林蛋糕胚（此配方为4个烤盘的量） 蛋清：840克 白糖：800克 塔粉：20克 盐：10克 ① 跟做蛋糕胚一样的做法，不宜打的太老，可稍微比做蛋糕胚时老一点点。 大豆油：160克 牛奶：480克 烘焙油：320克 巧克力块：320克 ② 隔水加热至融化，立马加入③搅拌均匀后加入④继续搅拌均匀，然后放入之前烧水用的容器里保温。 低粉：320克 玉米粉：80克 可可粉：200克 ③ 等②部分融化后，趁热加入第二部分。 蛋黄：800克 ④ 最后加入 注：最后，跟做蛋糕胚一样的做法，取出1/3的蛋清先放入搅拌料，最后再搅匀即可。 上火：190 下火：160 烤16分钟，10分钟后换头烤。",
+                imgUrl: "i.waaac.com/tp/hsldgp.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn102"
+            },
+            { id: 103, category: "蛋糕面包", name: "核桃酥", 
+                process: "核桃酥（此配方为完整配方的2/3） 棕油：3斤6两 棉糖：2斤7两 泡打粉：15克 盐：5克 小苏打：25克 臭粉(食用氨明发):20克 大豆油:1.1斤 ② 水:1.7斤 ③ 面粉:5斤3两 极 ③ ①.②.打至7-8分后加入面粉（直接倒入） 注：面团45克大小，烤13分钟，9分钟换头。 先沾芝麻，然后用手拿住面团，另一手用手掌将沾芝麻的面团顶平，然后用食指弯曲的形状转动面团打一个洞，且不能打破，留下跟成型的厚度一样。 上火：210 下火：160-170",
+                imgUrl: "i.waaac.com/tp/hts.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn103"
+            },
+            { id: 104, category: "蛋糕面包", name: "泡芙", 
+                process: "泡芙 水：3斤半 牛奶：0.5斤 黄油：1斤6两 ① 火烧开沸腾1分钟左右马上倒入打发桶里，然后又马上倒入②，开低档先把干粉搅半10秒左右立马换快档，且提一下桶更加有利于散热。 面粉：2斤 盐：5-10克 ② 鸡蛋：25个 ③ 把①烧开倒入打发桶里面，再把②倒入桶里打发至不烫手后开始打鸡蛋，每个鸡蛋的时间在4-5秒拌均匀后用裱花袋代表开始操作。注意不能打的太稀或是太稠。 注：10分钟之前不能打开烤箱看，看烤出来的颜色呈现金黄即可出炉。 上火：230 下火：160 15分钟 10分钟换头",
+                imgUrl: "i.waaac.com/tp/pf.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn104"
+            },
+            { id: 105, category: "蛋糕面包", name: "南瓜饼", 
+                process: "南瓜饼 南瓜：1斤 白糖：4两 糯米粉：4两 油炸，炸至两面鼓起来即可捞出。 注：南瓜去皮切厚厚的薄片，放入高压锅煮烂，捞出沥水，然后按比例依次加入白糖搅拌融化，再加入糯米粉搅拌均匀即可备用，太稀则加入糯米粉多一些，太粘稠则加入南瓜沥出来的水。 蛋塔 上火：220° 下火：230° 烤25分钟 蛋挞液倒入蛋挞皮内需8-9分满， 烤箱提前预热至设定温度，上下火相差10°， 先烤18分钟，然后换头继续烤5-7分钟即可出炉。 上火220 下火230",
+                imgUrl: "i.waaac.com/tp/ngb.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn105"
+            },
+            { id: 1035, category: "蛋糕面包", name: "面包亮光剂", 
+                process: "面包亮光剂：鸡蛋、白糖、色拉油按1：1：1的比例合50克，先把鸡蛋和白糖混合搅拌至完全融化，最后加入色拉油搅拌均匀。",
+                imgUrl: "i.waaac.com/tp/ngb.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn105"
+            },
+            { id: 106, category: "蛋糕面包", name: "肉松小贝", 
+                process: "肉松小贝 蛋清：500克（一斤3两，全蛋3个） 糖：250克（6两7） 塔塔粉：10克 盐：2克左右 全蛋3个 牛奶：80克 大豆油：90克 ④ 先搅散 低筋粉：250克 玉米淀粉：50克 ② 再加搅拌 蛋黄：250克 ③ 最后搅拌 装裱花袋挤5×7排，垫纸 上火240°,下火不用，8-9分钟   。",
+                imgUrl: "i.waaac.com/tp/rsxb.jpg",
+                videoUrl: "hti.waaac.com/tps://www.youtube.com/embed/dg1XDJncn106"
+            }
+        ];
+
+        // 为每个分类匹配对应的图标
+        const categoryIcons = {
+            "经典奶茶": "fa-coffee",
+            "鲜果屿茶": "fa-lemon-o",
+            "咖啡系列": "fa-coffee",
+            "益力多": "fa-flask",
+            "星冰乐系列": "fa-snowflake-o",
+            "冰沙系列": "fa-ice-cream",
+            "醇香生椰": "fa-cube",
+            "热饮": "fa-fire",
+            "暴打柠檬茶": "fa-lemon-o",
+            "牛乳茶": "fa-milk",
+            "蛋糕面包": "fa-birthday-cake",
+            "后厨操作": "fa-cogs"
+        };
+
+        // 提取所有唯一分类并统计数量
+        const categoryCounts = {};
+        products.forEach(product => {
+            if (categoryCounts[product.category]) {
+                categoryCounts[product.category]++;
+            } else {
+                categoryCounts[product.category] = 1;
+            }
+        });
+        const categories = Object.keys(categoryCounts);
+        
+        // DOM元素
+        const productList = document.getElementById('product-list');
+        const loading = document.getElementById('loading');
+        const categoryContainer = document.querySelector('.flex.space-x-2.px-4.py-3.min-w-max');
+        const productModal = document.getElementById('product-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalCategory = document.getElementById('modal-category');
+        const modalProcess = document.getElementById('modal-process');
+        const modalImage = document.getElementById('modal-image');
+        const modalVideo = document.getElementById('modal-video');
+        const closeModal = document.getElementById('close-modal');
+        const modalBackdrop = document.getElementById('modal-backdrop');
+        const menuToggle = document.getElementById('menu-toggle');
+
+        // 初始化页面
+        function init() {
+            // 生成分类按钮
+            generateCategoryButtons();
+            
+            // 显示所有产品
+            displayProducts(products);
+        }
+
+        // 生成分类按钮 - 包含数量统计和图标
+        function generateCategoryButtons() {
+            categories.forEach(category => {
+                // 获取分类对应的图标，如果没有则使用默认图标
+                const iconClass = categoryIcons[category] || "fa-cutlery";
+                
+                const button = document.createElement('button');
+                button.className = 'category-btn bg-gray-100 text-gray-700 px-4 py-2 rounded-full text-sm font-medium transition-all hover:bg-gray-200 hover:shadow-md';
+                button.innerHTML = `<i class="fa ${iconClass} mr-1"></i>${category} <span class="bg-primary/10 text-primary rounded-full px-2 text-xs ml-1">${categoryCounts[category]}</span>`;
+                button.addEventListener('click', () => {
+                    // 过滤并显示该分类下的产品
+                    const filteredProducts = products.filter(product => product.category === category);
+                    displayProducts(filteredProducts);
+                    
+                    // 更新按钮样式
+                    document.querySelectorAll('.category-btn').forEach(btn => {
+                        btn.classList.remove('bg-primary', 'text-white');
+                        btn.classList.add('bg-gray-100', 'text-gray-700');
+                        // 更新数量标签样式
+                        btn.querySelector('span').classList.remove('bg-white', 'text-primary');
+                        btn.querySelector('span').classList.add('bg-primary/10', 'text-primary');
+                    });
+                    button.classList.remove('bg-gray-100', 'text-gray-700');
+                    button.classList.add('bg-primary', 'text-white');
+                    // 更新数量标签样式
+                    button.querySelector('span').classList.remove('bg-primary/10', 'text-primary');
+                    button.querySelector('span').classList.add('bg-white', 'text-primary');
+                });
+                categoryContainer.appendChild(button);
+            });
+            
+            // 全部产品按钮事件
+            document.querySelector('.category-btn.active').addEventListener('click', () => {
+                displayProducts(products);
+                
+                // 更新按钮样式
+                document.querySelectorAll('.category-btn').forEach(btn => {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('bg-gray-100', 'text-gray-700');
+                    // 更新数量标签样式
+                    if (btn.querySelector('span')) {
+                        btn.querySelector('span').classList.remove('bg-white', 'text-primary');
+                        btn.querySelector('span').classList.add('bg-primary/10', 'text-primary');
+                    }
+                });
+                document.querySelector('.category-btn.active').classList.remove('bg-gray-100', 'text-gray-700');
+                document.querySelector('.category-btn.active').classList.add('bg-primary', 'text-white');
+                // 更新数量标签样式
+                document.querySelector('.category-btn.active span').classList.remove('bg-primary/10', 'text-primary');
+                document.querySelector('.category-btn.active span').classList.add('bg-white', 'text-primary');
+            });
+        }
+
+        // 显示产品列表 - 只显示产品名称，不显示ID和类别
+        function displayProducts(productsToDisplay) {
+            // 显示加载状态
+            productList.innerHTML = '';
+            loading.style.display = 'flex';
+            
+            // 模拟加载延迟
+            setTimeout(() => {
+                if (productsToDisplay.length === 0) {
+                    productList.innerHTML = '<p class="col-span-full text-center py-16 text-gray-500">没有找到产品</p>';
+                } else {
+                    productsToDisplay.forEach(product => {
+                        const productCard = document.createElement('div');
+                        productCard.className = 'bg-white rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden border border-gray-100 cursor-pointer group flex flex-col justify-center';
+                        productCard.innerHTML = `
+                            <div class="p-4 flex items-center justify-center h-full">
+                                <h3 class="text-center font-medium text-gray-800 group-hover:text-primary transition-colors line-clamp-2">${product.name}</h3>
+                            </div>
+                        `;
+                        productCard.addEventListener('click', () => {
+                            openProductModal(product);
+                        });
+                        productList.appendChild(productCard);
+                    });
+                }
+                
+                // 隐藏加载状态
+                loading.style.display = 'none';
+            }, 300);
+        }
+
+        // 打开产品详情模态框 - 使用产品的图片和视频
+        function openProductModal(product) {
+            modalTitle.textContent = product.name;
+            modalCategory.textContent = product.category;
+            
+            // 设置产品图片
+            modalImage.src = product.imgUrl;
+            modalImage.alt = product.name;
+            
+            // 设置视频
+            modalVideo.src = product.videoUrl;
+            
+            // 优化制作流程展示
+            if (product.process.includes('｜')) {
+                const steps = product.process.split('｜');
+                let processHtml = '<ol class="list-decimal pl-5 space-y-2">';
+                steps.forEach(step => {
+                    processHtml += `<li>${step.trim()}</li>`;
+                });
+                processHtml += '</ol>';
+                modalProcess.innerHTML = processHtml;
+            } else {
+                modalProcess.textContent = product.process;
+            }
+            
+            // 显示模态框
+            productModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            
+            // 添加动画
+            setTimeout(() => {
+                productModal.querySelector('div[class*="max-w-4xl"]').classList.add('scale-100');
+                productModal.querySelector('div[class*="max-w-4xl"]').classList.remove('scale-95');
+            }, 10);
+        }
+
+        // 关闭产品详情模态框
+        function closeProductModal() {
+            productModal.querySelector('div[class*="max-w-4xl"]').classList.remove('scale-100');
+            productModal.querySelector('div[class*="max-w-4xl"]').classList.add('scale-95');
+            
+            // 暂停视频播放
+            modalVideo.src = modalVideo.src;
+            
+            setTimeout(() => {
+                productModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }, 300);
+        }
+
+        // 事件监听
+        closeModal.addEventListener('click', closeProductModal);
+        modalBackdrop.addEventListener('click', closeProductModal);
+        
+        // 移动端菜单切换
+        menuToggle.addEventListener('click', () => {
+            const categoryScroll = document.querySelector('.overflow-x-auto.scrollbar-hide');
+            categoryScroll.classList.toggle('hidden');
+        });
+        
+        // 滚动时改变导航栏样式
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 10) {
+                header.classList.add('shadow');
+            } else {
+                header.classList.remove('shadow');
+            }
+        });
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
